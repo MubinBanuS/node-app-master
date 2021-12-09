@@ -1,5 +1,4 @@
 var express=require("express")
-//const security=require("../orm/security/bcrptalgo")
 const passport=require("passport")
 require('../orm/security/security')(passport)
 var route = express.Router();

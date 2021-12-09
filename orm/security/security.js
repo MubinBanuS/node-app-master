@@ -1,7 +1,6 @@
 var JwtStrategy = require('passport-jwt').Strategy,
 ExtractJwt = require('passport-jwt').ExtractJwt;
 var model = require('../model/user')
-// load up the user model
 
 async function getPassword(username){
     return new Promise(async function(resolve,reject){
@@ -15,13 +14,6 @@ async function getPassword(username){
         catch(err){
             reject(err)
         }
-
-        // dbops.getUserByName(username,function(err,data){
-        //     if(err) 
-        //        reject(err)
-        //     else 
-        //        resolve(data[0]?data[0].password:undefined)
-        // })
     })
 }
 

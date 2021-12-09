@@ -6,7 +6,7 @@ var model=require('../orm/model/skillmap')
 
 route.get("/:employeeid",async function(request,response){
 try{
-   const employees = await empoyeemodel.employee.findOne({where:{employee_id:request.params.employeeid }})
+   const employees = await model.employee.findOne({where:{employee_id:request.params.employeeid }})
    let result = employees.dataValues
    
    if(result!=null) 
@@ -30,8 +30,7 @@ catch(e)
 
 
 
-route.post("/manager/:name",async function(request,response){
-//route.post("/manager/:name",passport.authenticate('jwt',{session:false}),async function(request,response){
+route.post("/manager/:name",passport.authenticate('jwt',{session:false}),async function(request,response){
    try{
       const employees = await model.skillmap.findAll({
          group: ['employee_id'],
