@@ -28,9 +28,7 @@ catch(e)
 
 })
 
-
-
-route.post("/manager/:name",passport.authenticate('jwt',{session:false}),async function(request,response){
+route.get("/manager/:name",passport.authenticate('jwt',{session:false}),async function(request,response){
    try{
       const employees = await model.skillmap.findAll({
          group: ['employee_id'],
@@ -71,7 +69,73 @@ route.post("/manager/:name",passport.authenticate('jwt',{session:false}),async f
       console.log(e)
            response.status(500)
    }
-   
-   })
+})
 
+
+route.post("/softlock",passport.authenticate('jwt',{session:false}),async function(request,response){
+      try{
+       
+         let ans={ 
+               employee_id: request.body.employee_id, 
+               manager: request.body.username,
+               status:'waiting',
+               requestmessage:request.body.requestmessage
+         }
+         const softlock = await model.softlock.create(ans);
+         console.log("check data update")
+         console.log(softlock)
+         let employee = await model.employee.findOne({ where: { employee_id: request.body.employee_id } })
+         employee.lockstatus = 'request_waiting';
+         await employee.save();
+         response.send("Requested successfully!")
+      }
+      catch(e)
+      {
+         console.log(e)
+              response.status(500)
+      }
+})
+
+
+
+      route.get("/wfm/:name",passport.authenticate('jwt',{session:false}),async function(request,response){
+         try {
+            const manager_requests = await model.softlock.findAll({
+               group: ['employee_id'],
+               attributes: ['employee_id','manager','reqdate'],
+               required: true,
+               include: [{
+                 model: model.employee,
+                 attributes: ['wfm_manager'],
+                 required: true,
+                 where: { wfm_manager: request.params.name, lockstatus: 'request_waiting' }
+              }]
+        
+            })
+           console.log(manager_requests);
+            let wfm_managers = [];
+            manager_requests.map(employee => {
+               let wfm_manager = {
+                  EmployeeId: employee.dataValues.employee_id,
+                  Manager: employee.dataValues.employee.manager,
+                  reqDate: employee.dataValues.reqdate,
+                  wfm_manager: employee.dataValues.employee.wfm_manager
+               }
+               wfm_managers.push(wfm_manager)
+            });
+            console.log('wfm-managers:', wfm_managers);
+     
+            if (wfm_managers.length > 0) {
+               response.json(wfm_managers)
+            }
+            else
+               response.status(401).send("Failed")
+         }
+     
+         catch (e) {
+            console.log(e)
+            response.status(500)
+         }
+      });
+      
 module.exports=  route

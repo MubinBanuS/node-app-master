@@ -107,5 +107,76 @@ skillmap.sync({force: false}).then(() => {
 employee.sync({force: false}).then(() => {
     console.log("Employee table Synched!!!");
 });
+var softlock = sequelize.define('softlock', {
+  employee_id: {
+     type: Sequelize.INTEGER,
+     allowNull: false
+ },
+ manager: {
+     type: Sequelize.TEXT,
+     allowNull: false
+ },
+ reqdate: {
+     type: Sequelize.DATE,    
+     allowNull: false,
+     defaultValue:Sequelize.NOW    
+ },
+ status: {
+     type: Sequelize.TEXT,
+     allowNull: false
+ },
+ lastupdated:{
+  type: Sequelize.DataTypes.DATE,
+  allowNull: false,
+  defaultValue:Sequelize.NOW
+},
+ lockid: {
+     type: Sequelize.INTEGER,
+     primaryKey: true,
+     autoIncrement: true
+ },
+ requestmessage: {
+     type: Sequelize.TEXT,
+     allowNull: false
+ },
+ wfmremark: {
+     type: Sequelize.TEXT,
+     allowNull: true
+ },
+ managerstatus: {
+     type: Sequelize.TEXT,
+     allowNull: true
+ },
+ mgrstatuscomment: {
+     type: Sequelize.TEXT,
+     allowNull: true
+ },
+ mgrlastupdate: {
+     type: Sequelize.DataTypes.DATE,
+     allowNull: true,
+     defaultValue:Sequelize.NOW
+ }
+}
+,{
+ //don't add the timestamp attributes (updatedAt, createdAt)
+timestamps: false,
 
-module.exports={employee:employee,skill:skill,skillmap:skillmap};
+// If don't want createdAt
+createdAt: false,
+
+// If don't want updatedAt
+updatedAt: false
+}
+
+);
+softlock.removeAttribute('id'); 
+softlock.removeAttribute('createdAt'); 
+softlock.removeAttribute('updatedAt'); 
+softlock.belongsTo(employee, { foreignKey: 'employee_id' });
+
+softlock.sync({force: false}).then(() => {
+ 
+ console.log("softlock Synched!!!");
+});
+
+module.exports={employee:employee,skill:skill,skillmap:skillmap,softlock:softlock};
