@@ -2,7 +2,7 @@ var sequelize=require('../orm/connection');
 const passport=require('passport')
 var express=require("express")
 var route = express.Router();
-var model=require('../orm/model/skillmap')
+var model=require('../orm/model/skillmap');
 
 route.get("/:employeeid",async function(request,response){
 try{
@@ -82,8 +82,6 @@ route.post("/softlock",passport.authenticate('jwt',{session:false}),async functi
                requestmessage:request.body.requestmessage
          }
          const softlock = await model.softlock.create(ans);
-         console.log("check data update")
-         console.log(softlock)
          let employee = await model.employee.findOne({ where: { employee_id: request.body.employee_id } })
          employee.lockstatus = 'request_waiting';
          await employee.save();
@@ -96,46 +94,61 @@ route.post("/softlock",passport.authenticate('jwt',{session:false}),async functi
       }
 })
 
+route.get("/wfm/:name",passport.authenticate('jwt',{session:false}),async function(request,response){
+   try {
+      const manager_requests = await model.softlock.findAll({
+         group: ['employee_id'],
+         attributes: ['employee_id','manager','reqdate','requestmessage'],
+         required: true,
+         include: [{
+           model: model.employee,
+           attributes: ['wfm_manager'],
+           required: true,
+           where: { wfm_manager: request.params.name, lockstatus: 'request_waiting' }
+        }]
+      })
 
-
-      route.get("/wfm/:name",passport.authenticate('jwt',{session:false}),async function(request,response){
-         try {
-            const manager_requests = await model.softlock.findAll({
-               group: ['employee_id'],
-               attributes: ['employee_id','manager','reqdate'],
-               required: true,
-               include: [{
-                 model: model.employee,
-                 attributes: ['wfm_manager'],
-                 required: true,
-                 where: { wfm_manager: request.params.name, lockstatus: 'request_waiting' }
-              }]
-        
-            })
-           console.log(manager_requests);
-            let wfm_managers = [];
-            manager_requests.map(employee => {
-               let wfm_manager = {
-                  EmployeeId: employee.dataValues.employee_id,
-                  Manager: employee.dataValues.employee.manager,
-                  reqDate: employee.dataValues.reqdate,
-                  wfm_manager: employee.dataValues.employee.wfm_manager
-               }
-               wfm_managers.push(wfm_manager)
-            });
-            console.log('wfm-managers:', wfm_managers);
-     
-            if (wfm_managers.length > 0) {
-               response.json(wfm_managers)
-            }
-            else
-               response.status(401).send("Failed")
+      let wfm_managers = [];
+      manager_requests.map(employee => {
+         let wfm_manager = {
+            EmployeeId: employee.dataValues.employee_id,
+            Manager: employee.dataValues.manager,
+            reqDate: employee.dataValues.reqdate,
+            requestmessage: employee.dataValues.requestmessage,
+            wfm_manager: employee.dataValues.employee.wfm_manager
          }
-     
-         catch (e) {
-            console.log(e)
-            response.status(500)
-         }
+         wfm_managers.push(wfm_manager)
       });
+
+      if (wfm_managers.length > 0) {
+         response.json(wfm_managers)
+      }
+      else
+         response.status(401).send("Failed")
+   }
+
+   catch (e) {
+      console.log(e)
+      response.status(500)
+   }
+});
+
+route.post("/softlockstatus",passport.authenticate('jwt',{session:false}),async function(request,response){
+   
+   try{
+      let softlock = await model.softlock.findOne({ where: { employee_id: request.body.employee_id } })
+      softlock.managerstatus = request.body.status;
+      await softlock.save();
+      let employee = await model.employee.findOne({ where: { employee_id: request.body.employee_id } })
+      employee.lockstatus =  request.body.status==='accepted'? 'locked':'not_requested';
+      await employee.save();
+      response.send("Requested status updated successfully!") 
+   }
+   catch (e) {
+      console.log(e)
+      response.status(500)
+   }
+});
+      
       
 module.exports=  route
