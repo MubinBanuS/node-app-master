@@ -1,35 +1,33 @@
-var express=require("express")
-const passport=require("passport")
+var express = require("express")
+const passport = require("passport")
 require('../orm/security/security')(passport)
 var route = express.Router();
 var model = require('../orm/model/user')
-const jwt=require("jsonwebtoken");
+const jwt = require("jsonwebtoken");
 
-route.post("/signin",async function(request,response){
-    const {username,password}=request.body 
-try{
-   const user = await model.user.findOne({where:{username:username}})
-   let result = user.dataValues
-   
-   if(result.password===password) 
-      {
+route.post("/signin", async function (request, response) {
+   const { username, password } = request.body
+   try {
+      const user = await model.user.findOne({ where: { username: username } })
+      let result = user.dataValues
+
+      if (result.password === password) {
          response.json(
             {
                username: username,
                usertype: result.role,
-               token: jwt.sign({username:username,password:password},"node-app-22")
+               token: jwt.sign({ username: username, password: password }, "node-app-22")
             }
          )
       }
       else
-           response.status(401).send("Username or Password incorrect")
-}
-catch(e)
-{
-   console.log(e)
-        response.status(500)
-}
+         response.status(401).send("Username or Password incorrect")
+   }
+   catch (e) {
+      console.log(e)
+      response.status(500)
+   }
 
 })
 
-module.exports=  route
+module.exports = route
